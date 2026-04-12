@@ -5,23 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Gauge, 
-  Fuel, 
-  Ruler, 
-  Cog, 
-  Shield, 
-  Palette 
+import {
+  Gauge,
+  Fuel,
+  Ruler,
+  Cog,
+  Shield,
+  Palette
 } from 'lucide-react'
+
+import { VehicleData } from '@/lib/types'
 
 interface VehicleSpecsProps {
   vin: string
-  data: {
-    engine?: string
-    transmission?: string
-    drive?: string
-    body?: string
-  }
+  data: VehicleData
 }
 
 interface SpecsData {
@@ -96,12 +93,12 @@ export function VehicleSpecs({ vin, data }: VehicleSpecsProps) {
   )
 }
 
-function BasicSpecs({ data }: { data: VehicleSpecsProps['data'] }) {
+function BasicSpecs({ data }: { data: VehicleData }) {
   const basicSpecs = [
-    { label: 'Engine', value: data.engine },
-    { label: 'Transmission', value: data.transmission },
-    { label: 'Drivetrain', value: data.drive },
-    { label: 'Body Style', value: data.body },
+    { label: 'Engine', value: data.engineDisplacement },
+    { label: 'Transmission', value: 'N/A' },
+    { label: 'Drivetrain', value: data.driveType },
+    { label: 'Body Style', value: data.bodyClass },
   ].filter(spec => spec.value)
 
   return (
@@ -152,7 +149,7 @@ function DetailedSpecs({ specs, data }: { specs: NonNullable<SpecsData['specs']>
       </TabsList>
 
       <TabsContent value="engine" className="mt-4">
-        <SpecGrid specs={features?.engine || { engine: data.engine }} />
+        <SpecGrid specs={features?.engine || { engine: data.engineDisplacement || 'N/A' }} />
       </TabsContent>
 
       <TabsContent value="fuel" className="mt-4">
@@ -164,7 +161,7 @@ function DetailedSpecs({ specs, data }: { specs: NonNullable<SpecsData['specs']>
       </TabsContent>
 
       <TabsContent value="drivetrain" className="mt-4">
-        <SpecGrid specs={features?.driveTrain || { drivetrain: data.drive, transmission: data.transmission }} />
+        <SpecGrid specs={features?.driveTrain || { drivetrain: data.driveType || 'N/A', transmission: 'N/A' }} />
       </TabsContent>
 
       <TabsContent value="safety" className="mt-4">
@@ -180,7 +177,7 @@ function DetailedSpecs({ specs, data }: { specs: NonNullable<SpecsData['specs']>
 
 function SpecGrid({ specs }: { specs: Record<string, string | number | boolean> }) {
   const entries = Object.entries(specs).filter(([, value]) => value !== undefined && value !== null && value !== '')
-  
+
   if (entries.length === 0) {
     return <p className="text-muted-foreground">No data available</p>
   }
@@ -201,7 +198,7 @@ function SpecGrid({ specs }: { specs: Record<string, string | number | boolean> 
 
 function SafetySpecs({ specs }: { specs: Record<string, boolean | string> }) {
   const entries = Object.entries(specs)
-  
+
   if (entries.length === 0) {
     return <p className="text-muted-foreground">No safety data available</p>
   }
@@ -209,8 +206,8 @@ function SafetySpecs({ specs }: { specs: Record<string, boolean | string> }) {
   return (
     <div className="flex flex-wrap gap-2">
       {entries.map(([key, value]) => (
-        <Badge 
-          key={key} 
+        <Badge
+          key={key}
           variant={value === true || value === 'yes' ? 'default' : 'secondary'}
           className={value === true || value === 'yes' ? 'bg-accent text-accent-foreground' : ''}
         >
@@ -221,7 +218,7 @@ function SafetySpecs({ specs }: { specs: Record<string, boolean | string> }) {
   )
 }
 
-function ColorSpecs({ colors }: { colors?: SpecsData['specs']['color'] }) {
+function ColorSpecs({ colors }: { colors?: NonNullable<SpecsData['specs']>['color'] }) {
   if (!colors) {
     return <p className="text-muted-foreground">No color data available</p>
   }
@@ -232,11 +229,11 @@ function ColorSpecs({ colors }: { colors?: SpecsData['specs']['color'] }) {
         <div>
           <p className="text-sm font-medium text-muted-foreground mb-2">Exterior Colors</p>
           <div className="flex flex-wrap gap-2">
-            {colors.exterior.map((color, i) => (
+            {colors.exterior.map((color: { name: string; rgb?: string }, i: number) => (
               <div key={i} className="flex items-center gap-2 rounded-lg border px-3 py-2">
                 {color.rgb && (
-                  <div 
-                    className="h-4 w-4 rounded-full border" 
+                  <div
+                    className="h-4 w-4 rounded-full border"
                     style={{ backgroundColor: `rgb(${color.rgb})` }}
                   />
                 )}
@@ -250,11 +247,11 @@ function ColorSpecs({ colors }: { colors?: SpecsData['specs']['color'] }) {
         <div>
           <p className="text-sm font-medium text-muted-foreground mb-2">Interior Colors</p>
           <div className="flex flex-wrap gap-2">
-            {colors.interior.map((color, i) => (
+            {colors.interior.map((color: { name: string; rgb?: string }, i: number) => (
               <div key={i} className="flex items-center gap-2 rounded-lg border px-3 py-2">
                 {color.rgb && (
-                  <div 
-                    className="h-4 w-4 rounded-full border" 
+                  <div
+                    className="h-4 w-4 rounded-full border"
                     style={{ backgroundColor: `rgb(${color.rgb})` }}
                   />
                 )}

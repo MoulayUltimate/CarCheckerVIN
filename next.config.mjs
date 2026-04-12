@@ -11,6 +11,16 @@ const nextConfig = {
         hostname: 'api.auto.dev',
         pathname: '/photos/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.imagin.studio',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+        pathname: '/**',
+      },
     ],
   },
 }

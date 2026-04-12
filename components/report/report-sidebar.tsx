@@ -4,33 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { 
-  Download, 
-  Share2, 
-  Printer, 
-  Car, 
+import {
+  Download,
+  Share2,
+  Printer,
+  Car,
   MapPin,
   Building2,
   CheckCircle2
 } from 'lucide-react'
 import { VinSearch } from '@/components/vin-search'
 
+import { VehicleData } from '@/lib/types'
+
 interface ReportSidebarProps {
-  data: {
-    vin: string
-    vinValid: boolean
-    make?: string
-    model?: string
-    trim?: string
-    body?: string
-    origin?: string
-    vehicle?: {
-      year: number
-      make: string
-      model: string
-      manufacturer?: string
-    }
-  }
+  data: VehicleData
 }
 
 export function ReportSidebar({ data }: ReportSidebarProps) {
@@ -42,7 +30,7 @@ export function ReportSidebar({ data }: ReportSidebarProps) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${data.vehicle?.year} ${data.make} ${data.model} - VIN Report`,
+          title: `${data.year} ${data.make} ${data.model} - VIN Report`,
           text: `Check out this vehicle report for VIN ${data.vin}`,
           url: window.location.href,
         })
@@ -90,7 +78,7 @@ export function ReportSidebar({ data }: ReportSidebarProps) {
             </div>
             <div>
               <p className="font-semibold">
-                {data.vehicle?.year} {data.make || data.vehicle?.make} {data.model || data.vehicle?.model}
+                {data.year} {data.make} {data.model}
               </p>
               {data.trim && (
                 <p className="text-sm text-muted-foreground">{data.trim}</p>
@@ -101,31 +89,31 @@ export function ReportSidebar({ data }: ReportSidebarProps) {
           <Separator />
 
           <div className="space-y-3">
-            <SummaryItem 
-              icon={CheckCircle2} 
-              label="VIN Status" 
+            <SummaryItem
+              icon={CheckCircle2}
+              label="VIN Status"
               value={data.vinValid ? 'Verified' : 'Invalid'}
               valueClassName={data.vinValid ? 'text-accent' : 'text-destructive'}
             />
             {data.origin && (
-              <SummaryItem 
-                icon={MapPin} 
-                label="Origin" 
-                value={data.origin} 
+              <SummaryItem
+                icon={MapPin}
+                label="Origin"
+                value={data.origin}
               />
             )}
-            {data.vehicle?.manufacturer && (
-              <SummaryItem 
-                icon={Building2} 
-                label="Manufacturer" 
-                value={data.vehicle.manufacturer} 
+            {data.manufacturer && (
+              <SummaryItem
+                icon={Building2}
+                label="Manufacturer"
+                value={data.manufacturer}
               />
             )}
-            {data.body && (
-              <SummaryItem 
-                icon={Car} 
-                label="Body Style" 
-                value={data.body} 
+            {data.bodyClass && (
+              <SummaryItem
+                icon={Car}
+                label="Body Style"
+                value={data.bodyClass}
               />
             )}
           </div>
@@ -178,12 +166,12 @@ export function ReportSidebar({ data }: ReportSidebarProps) {
   )
 }
 
-function SummaryItem({ 
-  icon: Icon, 
-  label, 
+function SummaryItem({
+  icon: Icon,
+  label,
   value,
   valueClassName
-}: { 
+}: {
   icon: React.ElementType
   label: string
   value: string

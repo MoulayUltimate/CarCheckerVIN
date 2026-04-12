@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -31,12 +30,10 @@ export function VehiclePhotos({ photos }: VehiclePhotosProps) {
       </CardHeader>
       <CardContent>
         <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
-          <Image
+          <img
             src={photos[activeIndex]}
             alt={`Vehicle photo ${activeIndex + 1}`}
-            fill
-            className="object-cover"
-            priority={activeIndex === 0}
+            className="w-full h-full object-cover"
           />
           
           {photos.length > 1 && (
@@ -94,11 +91,10 @@ export function VehiclePhotos({ photos }: VehiclePhotosProps) {
                 )}
                 onClick={() => setActiveIndex(index)}
               >
-                <Image
+                <img
                   src={photo}
                   alt={`Vehicle thumbnail ${index + 1}`}
-                  fill
-                  className="object-cover"
+                  className="w-full h-full object-cover"
                 />
               </button>
             ))}

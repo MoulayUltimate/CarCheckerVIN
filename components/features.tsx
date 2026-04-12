@@ -13,41 +13,41 @@ import { Card, CardContent } from '@/components/ui/card'
 const features = [
   {
     icon: FileSearch,
-    title: 'Comprehensive VIN Decoding',
-    description: 'Decode any VIN to reveal make, model, trim, engine, transmission, and country of origin.',
+    title: 'Free VIN Decoder',
+    description: 'Instantly decode any VIN to reveal exact make, model, trim, engine, and build data for free.',
   },
   {
     icon: Shield,
-    title: 'Safety Recall Alerts',
-    description: 'Check for active and historical recalls to ensure your vehicle meets safety standards.',
-  },
-  {
-    icon: DollarSign,
-    title: 'Ownership Cost Analysis',
-    description: 'Calculate 5-year total cost of ownership including depreciation, fuel, and maintenance.',
+    title: 'Window Sticker Retrieval',
+    description: 'Access the original factory window sticker to see exact MSRP, interior colors, and optional equipment.',
   },
   {
     icon: Car,
-    title: 'Vehicle Specifications',
-    description: 'Access detailed specs including engine performance, dimensions, fuel economy, and features.',
+    title: 'Multi-Vehicle Support',
+    description: 'Comprehensive support for cars, trucks, motorcycles, RVs, and Canadian vehicle history records.',
+  },
+  {
+    icon: DollarSign,
+    title: 'Market Valuation',
+    description: 'Calculate accurate trade-in, private party, and dealer retail values based on localized market data.',
   },
   {
     icon: AlertTriangle,
-    title: 'Market Listings',
-    description: 'See if similar vehicles are for sale and compare market prices nationwide.',
+    title: 'Accident & Salvage Check',
+    description: 'Detect hidden damage, airbag deployments, total loss declarations, and rebuilt salvage titles.',
   },
   {
     icon: Clock,
-    title: 'Instant Results',
-    description: 'Get comprehensive vehicle information in seconds with our fast, reliable API.',
+    title: 'Instant 60s Delivery',
+    description: 'Get comprehensive vehicle history reports delivered to your inbox in an average of 60 seconds.',
   },
 ]
 
 const stats = [
-  { value: '250M+', label: 'VINs Decoded' },
-  { value: '99.9%', label: 'Accuracy Rate' },
-  { value: '<1s', label: 'Response Time' },
-  { value: '24/7', label: 'Availability' },
+  { value: '50K+', label: 'Happy Customers' },
+  { value: '4.9', label: 'Average App Rating' },
+  { value: '<60s', label: 'Average Delivery Time' },
+  { value: '24/7', label: 'Customer Support' },
 ]
 
 export function Features() {

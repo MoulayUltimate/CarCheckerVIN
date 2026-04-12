@@ -43,7 +43,7 @@ export function Testimonials() {
             What Customers Are Saying
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-pretty">
-            Join thousands of satisfied customers who made smarter car buying decisions
+            Join 50,000+ satisfied buyers who made smarter decisions. Average rating of 4.9/5 stars.
           </p>
         </div>
 

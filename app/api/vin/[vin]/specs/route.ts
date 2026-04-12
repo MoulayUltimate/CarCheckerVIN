@@ -1,46 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const API_BASE = 'https://api.auto.dev'
-const API_KEY = process.env.AUTO_DEV_API_KEY
-
-async function fetchWithAuth(endpoint: string) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    headers: {
-      'Authorization': `Bearer ${API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    next: { revalidate: 3600 },
-  })
-  return response
-}
+import { vehicleService } from '@/lib/vehicle-service'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ vin: string }> }
 ) {
   const { vin } = await params
-
-  if (!API_KEY) {
-    return NextResponse.json(
-      { error: 'API key not configured' },
-      { status: 500 }
-    )
-  }
-
   const cleanVin = vin.toUpperCase().trim()
 
   try {
-    const response = await fetchWithAuth(`/specs/${cleanVin}`)
-
-    if (!response.ok) {
-      const error = await response.json()
-      return NextResponse.json(
-        { error: error.error || 'Failed to fetch specs', code: error.code },
-        { status: response.status }
-      )
-    }
-
-    const data = await response.json()
+    const data = await vehicleService.getSpecs(cleanVin)
     return NextResponse.json(data)
   } catch (error) {
     console.error('Specs API Error:', error)

@@ -8,43 +8,22 @@ import { VehicleRecalls } from '@/components/report/vehicle-recalls'
 import { VehicleTCO } from '@/components/report/vehicle-tco'
 import { VehiclePhotos } from '@/components/report/vehicle-photos'
 import { ReportSidebar } from '@/components/report/report-sidebar'
+import { VehicleData } from '@/lib/types'
 
-const API_BASE = process.env.NEXT_PUBLIC_VERCEL_URL 
-  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` 
+const API_BASE = process.env.NEXT_PUBLIC_VERCEL_URL
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
   : 'http://localhost:3000'
 
-interface VinData {
-  vin: string
-  vinValid: boolean
-  make?: string
-  model?: string
-  trim?: string
-  body?: string
-  engine?: string
-  drive?: string
-  transmission?: string
-  origin?: string
-  vehicle?: {
-    year: number
-    make: string
-    model: string
-    manufacturer?: string
-  }
-  photos?: string[]
-  error?: string
-  code?: string
-}
-
-async function getVinData(vin: string): Promise<VinData | null> {
+async function getVinData(vin: string): Promise<VehicleData | null> {
   try {
     const response = await fetch(`${API_BASE}/api/vin/${vin}`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 0 },
     })
-    
+
     if (!response.ok) {
       return null
     }
-    
+
     return response.json()
   } catch (error) {
     console.error('Error fetching VIN data:', error)
@@ -59,7 +38,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { vin } = await params
   const data = await getVinData(vin)
-  
+
   if (!data || !data.vinValid) {
     return {
       title: 'Invalid VIN',
@@ -67,8 +46,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
-  const title = `${data.vehicle?.year} ${data.make} ${data.model} ${data.trim || ''} - Vehicle Report`
-  const description = `Get detailed vehicle information for VIN ${vin}. View specs, recalls, ownership costs, and more for this ${data.vehicle?.year} ${data.make} ${data.model}.`
+  const title = `${data.year} ${data.make} ${data.model} ${data.trim || ''} - Vehicle Report`
+  const description = `Get detailed vehicle information for VIN ${vin}. View specs, recalls, ownership costs, and more for this ${data.year} ${data.make} ${data.model}.`
 
   return {
     title,
@@ -93,7 +72,7 @@ export default async function ReportPage({ params }: PageProps) {
       <Header />
       <main className="flex-1 bg-muted/30">
         <VehicleHeader data={data} />
-        
+
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-8">
