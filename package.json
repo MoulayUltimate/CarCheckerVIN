@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "pages:build": "opennextjs-cloudflare build",
-    "pages:preview": "opennextjs-cloudflare preview",
-    "pages:deploy": "opennextjs-cloudflare deploy"
+    "pages:build": "export PATH=\"$PWD/scripts:/usr/local/bin:$PATH\" && opennextjs-cloudflare build",
+    "pages:preview": "export PATH=\"$PWD/scripts:/usr/local/bin:$PATH\" && opennextjs-cloudflare preview",
+    "pages:deploy": "export PATH=\"$PWD/scripts:/usr/local/bin:$PATH\" && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
