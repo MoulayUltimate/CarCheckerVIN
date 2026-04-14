@@ -8,10 +8,14 @@ class NHTSAProvider implements VINProvider {
             const data = await response.json()
             const results = data.Results || []
             const getField = (name: string) => results.find((r: any) => r.Variable === name)?.Value
+            
+            // Check for valid decode - NHTSA Error Code "0" means Success
+            const errorCode = getField('Error Code')
+            const isValid = errorCode === '0'
 
             return {
                 vin,
-                vinValid: true,
+                vinValid: isValid,
                 year: parseInt(getField('Model Year')),
                 make: getField('Make'),
                 model: getField('Model'),
@@ -26,6 +30,7 @@ class NHTSAProvider implements VINProvider {
                 origin: getField('Plant Country'),
                 photos: [],
                 recalls: { count: 0 },
+                error: isValid ? undefined : getField('Error Text')
             }
         } catch (error) {
             console.error('NHTSA Provider Error:', error)
@@ -53,22 +58,26 @@ class NHTSAProvider implements VINProvider {
     }
 
     async getSpecs(vin: string): Promise<DetailedSpecs> {
-        // NHTSA doesn't have a specific "specs" API like Auto.dev, 
-        // but the decode call already returns most specs.
-        // For now, we return a basic structure.
         const data = await this.decode(vin)
         return {
-            vehicle: { year: data.year || 0, make: data.make || '', model: data.model || '' },
+            vehicle: { 
+                year: data.year || 0, 
+                make: data.make || '', 
+                model: data.model || '' 
+            },
             specs: {
                 bodyClass: data.bodyClass,
                 engine: data.engineDisplacement,
                 drive: data.driveType,
+                cylinders: data.engineCylinders,
+                origin: data.origin,
+                manufacturer: data.manufacturer
             }
         }
     }
 
     async getTCO(vin: string): Promise<TCOData> {
-        return { vin, data: {} } // No TCO from NHTSA
+        return { vin } // NHTSA doesn't have TCO
     }
 }
 
@@ -91,7 +100,6 @@ class AutoDevProvider implements VINProvider {
             if (!response.ok) throw new Error('Auto.dev API request failed')
             const data = await response.json()
             
-            // Fetch real photos from auto.dev
             let photos: string[] = []
             try {
                 const photoRes = await this.fetchWithAuth(`/photos/${vin}`)
@@ -99,7 +107,6 @@ class AutoDevProvider implements VINProvider {
                     const photoData = await photoRes.json()
                     const retailPhotos = photoData?.data?.retail || []
                     const wholesalePhotos = photoData?.data?.wholesale || []
-                    // Photos could be strings or objects with a url property
                     const extractUrl = (p: any): string => typeof p === 'string' ? p : (p.url || p.href || p.link || '')
                     photos = [...retailPhotos.map(extractUrl), ...wholesalePhotos.map(extractUrl)].filter(Boolean)
                 }
@@ -132,73 +139,104 @@ class AutoDevProvider implements VINProvider {
     }
 
     async getRecalls(vin: string): Promise<Recall[]> {
-        const response = await this.fetchWithAuth(`/recalls/${vin}`)
-        if (!response.ok) return []
-        return response.json()
+        try {
+            const response = await this.fetchWithAuth(`/recalls/${vin}`)
+            if (!response.ok) return []
+            return response.json()
+        } catch {
+            return []
+        }
     }
 
     async getSpecs(vin: string): Promise<DetailedSpecs> {
-        const response = await this.fetchWithAuth(`/specs/${vin}`)
-        if (!response.ok) return {} as DetailedSpecs
-        return response.json()
+        try {
+            const response = await this.fetchWithAuth(`/specs/${vin}`)
+            if (!response.ok) return {} as DetailedSpecs
+            return response.json()
+        } catch {
+            return {} as DetailedSpecs
+        }
     }
 
     async getTCO(vin: string): Promise<TCOData> {
-        const response = await this.fetchWithAuth(`/tco/${vin}`)
-        if (!response.ok) return { vin }
-        return response.json()
+        try {
+            const response = await this.fetchWithAuth(`/tco/${vin}`)
+            if (!response.ok) return { vin }
+            return response.json()
+        } catch {
+            return { vin }
+        }
     }
 }
 
 export class VehicleService {
     private provider: VINProvider
+    private fallbackProvider: VINProvider
 
     constructor() {
-        if (process.env.CLEARVIN_TOKEN) {
-            this.provider = new NHTSAProvider()
-        } else if (process.env.AUTO_DEV_API_KEY) {
+        this.fallbackProvider = new NHTSAProvider()
+        if (process.env.AUTO_DEV_API_KEY) {
             this.provider = new AutoDevProvider(process.env.AUTO_DEV_API_KEY)
         } else {
-            this.provider = new NHTSAProvider()
+            this.provider = this.fallbackProvider
         }
     }
 
     async decodeVin(vin: string): Promise<VehicleData> {
         const result = await this.provider.decode(vin)
-        // If Auto.dev API fails or throws a 500 error, gracefully fallback to the federal NHTSA database
-        if (!result.vinValid && this.provider instanceof AutoDevProvider) {
-            console.warn(`AutoDevProvider failed for VIN ${vin}. Falling back to NHTSAProvider.`)
-            const fallbackProvider = new NHTSAProvider()
-            const fallbackResult = await fallbackProvider.decode(vin)
+        
+        // If primary provider fails or returns incomplete invalid data, try fallback
+        if (!result.vinValid && this.provider !== this.fallbackProvider) {
+            console.warn(`Primary provider failed for VIN ${vin}. Falling back to NHTSA.`)
+            const fallbackResult = await this.fallbackProvider.decode(vin)
             
-            // Even if we fallback to NHTSA, try to salvage photos from Auto.dev since their photo API often works while the VIN api fails
-            try {
-                const autoDev = this.provider as AutoDevProvider;
-                // Exposing private fetchWithAuth is tricky, let's just make a new direct fetch call or just cast it
-                const authFetch = autoDev['fetchWithAuth'].bind(autoDev);
-                const photoRes = await authFetch(`/photos/${vin}`);
-                if (photoRes.ok) {
-                    const photoData = await photoRes.json()
-                    const retailPhotos = photoData?.data?.retail || []
-                    const wholesalePhotos = photoData?.data?.wholesale || []
-                    const extractUrl = (p: any): string => typeof p === 'string' ? p : (p.url || p.href || p.link || '')
-                    fallbackResult.photos = [...retailPhotos.map(extractUrl), ...wholesalePhotos.map(extractUrl)].filter(Boolean)
-                }
-            } catch (error) {
-                console.error("Failed to salvage photos from Auto.dev during fallback", error)
+            // Try salvaging photos even on fallback
+            if (this.provider instanceof AutoDevProvider) {
+                try {
+                    const autoDev = this.provider as AutoDevProvider;
+                    const authFetch = autoDev['fetchWithAuth'].bind(autoDev);
+                    const photoRes = await authFetch(`/photos/${vin}`);
+                    if (photoRes.ok) {
+                        const photoData = await photoRes.json()
+                        const extractUrl = (p: any): string => typeof p === 'string' ? p : (p.url || p.href || p.link || '')
+                        const photos = [...(photoData?.data?.retail || []), ...(photoData?.data?.wholesale || [])].map(extractUrl).filter(Boolean)
+                        if (photos.length > 0) fallbackResult.photos = photos
+                    }
+                } catch {}
             }
-            
             return fallbackResult
         }
         return result
     }
 
     async getRecalls(vin: string): Promise<Recall[]> {
-        return this.provider.getRecalls ? this.provider.getRecalls(vin) : []
+        // Try primary
+        let recalls = this.provider.getRecalls ? await this.provider.getRecalls(vin) : []
+        
+        // If primary has none and we have a fallback, try fallback
+        if ((!recalls || recalls.length === 0) && this.provider !== this.fallbackProvider) {
+            recalls = await this.fallbackProvider.getRecalls!(vin)
+        }
+        return recalls
     }
 
     async getSpecs(vin: string): Promise<DetailedSpecs> {
-        return this.provider.getSpecs ? this.provider.getSpecs(vin) : {} as DetailedSpecs
+        // Try primary
+        let specs = this.provider.getSpecs ? await this.provider.getSpecs(vin) : {} as DetailedSpecs
+        
+        // If primary has no detailed specs (Auto.dev often returns an object with vehicle but no actual specs)
+        const hasDetailedSpecs = specs && specs.specs && Object.keys(specs.specs).length > 2
+        
+        if (!hasDetailedSpecs && this.provider !== this.fallbackProvider) {
+            const fallbackSpecs = await this.fallbackProvider.getSpecs!(vin)
+            // Merge or replace
+            if (!specs.vehicle) {
+                specs = fallbackSpecs
+            } else {
+                specs.specs = { ...(specs.specs || {}), ...fallbackSpecs.specs }
+            }
+        }
+        return specs
     }
 
     async getTCO(vin: string): Promise<TCOData> {
