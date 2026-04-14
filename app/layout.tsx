@@ -14,6 +14,7 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://carcheckvin.servicemhamedi2.workers.dev'),
   title: {
     default: 'VINCheck Pro - Free VIN Decoder & Vehicle History Reports',
     template: '%s | VINCheck Pro'
