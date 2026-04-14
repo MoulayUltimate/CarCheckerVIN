@@ -15,6 +15,15 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogDescription
+} from '@/components/ui/dialog'
+
 const US_STATES = [
   { value: 'AL', label: 'Alabama' },
   { value: 'AK', label: 'Alaska' },
@@ -69,6 +78,24 @@ const US_STATES = [
   { value: 'WY', label: 'Wyoming' },
 ]
 
+const VIN_LOCATIONS = [
+  {
+    title: "Driver's Side Dashboard",
+    description: "Look through the windshield from outside the vehicle. The VIN is on a metal plate where the dashboard meets the windshield.",
+    icon: Search
+  },
+  {
+    title: "Driver's Side Door Jamb",
+    description: "Open the driver's door and look for a sticker on the pillar or the door frame itself.",
+    icon: Car
+  },
+  {
+    title: "Vehicle Documents",
+    description: "Check your vehicle registration card, insurance policy documents, or your car's Title (pink slip).",
+    icon: Shield
+  }
+]
+
 export function HeroSection() {
   const [vin, setVin] = useState('')
   const [licensePlate, setLicensePlate] = useState('')
@@ -76,6 +103,7 @@ export function HeroSection() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'vin' | 'plate'>('vin')
+  const [isVinModalOpen, setIsVinModalOpen] = useState(false)
   const router = useRouter()
 
   const validateVin = (value: string): boolean => {
@@ -100,7 +128,11 @@ export function HeroSection() {
     const cleanVin = vin.toUpperCase().trim()
     if (!validateVin(cleanVin)) return
     setIsLoading(true)
-    router.push(`/report/${cleanVin}`)
+    
+    // Aesthetic delay for the "Scanning" experience
+    setTimeout(() => {
+      router.push(`/report/${cleanVin}`)
+    }, 1500)
   }
 
   const handlePlateSubmit = async (e: React.FormEvent) => {
@@ -115,7 +147,9 @@ export function HeroSection() {
       return
     }
     setIsLoading(true)
-    router.push(`/plate-lookup?plate=${encodeURIComponent(licensePlate.toUpperCase())}&state=${state}`)
+    setTimeout(() => {
+      router.push(`/plate-lookup?plate=${encodeURIComponent(licensePlate.toUpperCase())}&state=${state}`)
+    }, 1200)
   }
 
   const handleVinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,7 +169,19 @@ export function HeroSection() {
   }
 
   return (
-    <section id="search" className="hero-section">
+    <section id="search" className="hero-section relative">
+      {/* Scanning Backdrop Overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
+           <div className="relative">
+              <div className="w-24 h-24 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+              <Search className="absolute inset-0 m-auto w-8 h-8 text-primary animate-pulse" />
+           </div>
+           <h2 className="mt-8 text-2xl font-bold tracking-tight">Accessing Official Databases</h2>
+           <p className="mt-2 text-muted-foreground animate-pulse">Scanning NMVTIS records, auction history, and title documents...</p>
+        </div>
+      )}
+
       <div className="hero-container">
         {/* Left side - Visual showcase with phone + crashed car */}
         <div className="hero-visual">
@@ -245,7 +291,7 @@ export function HeroSection() {
                   <SelectTrigger className="hero-state-select">
                     <SelectValue placeholder="State" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px]">
                     {US_STATES.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         {s.label}
@@ -276,10 +322,36 @@ export function HeroSection() {
 
           {/* Links below search */}
           <div className="hero-links">
-            <a href="#" className="hero-link-primary">
-              <MapPin className="h-3.5 w-3.5" />
-              Where to find the VIN?
-            </a>
+            <Dialog open={isVinModalOpen} onOpenChange={setIsVinModalOpen}>
+              <DialogTrigger asChild>
+                <button className="hero-link-primary flex items-center gap-1.5 hover:text-primary transition-colors">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Where to find the VIN?
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px] rounded-3xl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold">Where to Find the VIN</DialogTitle>
+                  <DialogDescription className="text-base">
+                    The Vehicle Identification Number (VIN) is a unique 17-character code.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="mt-4 space-y-6">
+                  {VIN_LOCATIONS.map((loc) => (
+                    <div key={loc.title} className="flex gap-4 p-4 rounded-2xl bg-muted/30 border border-muted">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                           <loc.icon className="w-6 h-6 text-primary" />
+                        </div>
+                        <div className="space-y-1">
+                           <h4 className="font-bold">{loc.title}</h4>
+                           <p className="text-sm text-muted-foreground leading-relaxed">{loc.description}</p>
+                        </div>
+                    </div>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <span className="hero-link-separator">•</span>
             <span className="hero-link-text">No VIN?</span>
             <a href="/sample-report" className="hero-link-accent">
@@ -307,3 +379,4 @@ export function HeroSection() {
     </section>
   )
 }
+
